@@ -9,7 +9,7 @@ variable "sec_resource_group_name" {
 
 variable "location" {
   type    = string
-  default = "eastus"
+  default = "West Europe"
 }
 
 variable "vnet_cidr_range" {
@@ -37,8 +37,24 @@ data "azurerm_subscription" "current" {}
 # PROVIDERS
 #############################################################################
 
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 2.0"
+    }
+
+    azuread = {
+      source = "hashicorp/azuread"
+      version = "1.5.0"
+    }
+  }
+
+}
+
+
 provider "azurerm" {
-  version = "~> 1.0"
+  
 }
 
 provider "azuread" {
@@ -49,24 +65,31 @@ provider "azuread" {
 # RESOURCES
 #############################################################################
 
+
+resource "azurerm_resource_group" "rg" {
+  name     = var.sec_resource_group_name
+  location = var.location
+}
+
 ## NETWORKING ##
 
 module "vnet-sec" {
   source              = "Azure/vnet/azurerm"
   version             = "1.2.0"
-  resource_group_name = var.sec_resource_group_name
-  location            = var.location
-  vnet_name           = var.sec_resource_group_name
+  resource_group_name = azurerm_resource_group.rg.name
+  vnet_name           =  azurerm_resource_group.rg.name
   address_space       = var.vnet_cidr_range
   subnet_prefixes     = var.sec_subnet_prefixes
   subnet_names        = var.sec_subnet_names
-  nsg_ids             = {}
 
   tags = {
-    environment = "security"
-    costcenter  = "security"
+    purpose = "training"
+    description  = "Terraform exercises"
 
   }
+
+    depends_on = [azurerm_resource_group.rg]
+
 }
 
 ## AZURE AD SP ##
@@ -95,6 +118,7 @@ resource "azurerm_role_definition" "vnet-peering" {
   scope    = data.azurerm_subscription.current.id
 
   permissions {
+    #Microsoft Actions Reference: https://docs.microsoft.com/en-us/azure/role-based-access-control/resource-provider-operations
     actions     = ["Microsoft.Network/virtualNetworks/virtualNetworkPeerings/write", "Microsoft.Network/virtualNetworks/peer/action", "Microsoft.Network/virtualNetworks/virtualNetworkPeerings/read", "Microsoft.Network/virtualNetworks/virtualNetworkPeerings/delete"]
     not_actions = []
   }

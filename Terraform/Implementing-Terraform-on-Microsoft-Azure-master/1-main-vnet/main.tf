@@ -8,7 +8,7 @@ variable "resource_group_name" {
 
 variable "location" {
   type    = string
-  default = "eastus"
+  default = "West Europe"
 }
 
 
@@ -31,30 +31,45 @@ variable "subnet_names" {
 # PROVIDERS
 #############################################################################
 
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 2.0"
+    }
+  }
+}
 provider "azurerm" {
-  version = "~> 1.0"
+  features {}  
 }
 
 #############################################################################
 # RESOURCES
 #############################################################################
 
+resource "azurerm_resource_group" "rg" {
+  name     = var.resource_group_name
+  location = var.location
+}
+
 module "vnet-main" {
-  source              = "Azure/vnet/azurerm"
-  version             = "1.2.0"
-  resource_group_name = var.resource_group_name
+  source              = "Azure/network/azurerm"
+  version             = "3.5.0"
+  resource_group_name = azurerm_resource_group.rg.name
   location            = var.location
   vnet_name           = var.resource_group_name
   address_space       = var.vnet_cidr_range
   subnet_prefixes     = var.subnet_prefixes
   subnet_names        = var.subnet_names
   nsg_ids             = {}
-
   tags = {
-    environment = "dev"
-    costcenter  = "it"
+    purpose = "training"
+    description  = "Terraform exercises"
 
   }
+
+  depends_on = [azurerm_resource_group.rg]
+
 }
 
 #############################################################################
