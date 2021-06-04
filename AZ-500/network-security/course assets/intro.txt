@@ -1,0 +1,7 @@
+For the az-500 exam, you won't need to write any code yourself, however, you are expected to be proficient in scripting and automation.
+This means you may be expected to recognise the correct powershell commands and parameters and so these files do not include the powershell commands to recreate the demos fully
+but will give you some familiarity with the relevant powershell commands for this section of the exam.
+Comments and explicit variable names are used to explain what is happening in each step.
+
+These files contain all the core commands for the exam but do not cover every use case or variation.
+Therefore, reading through the Microsoft documentation may also be beneficial to see less common parameters or use cases.

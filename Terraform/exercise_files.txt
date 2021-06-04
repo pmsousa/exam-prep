@@ -1,0 +1,1 @@
+Exercise files found here: https://github.com/ned1313/Implementing-Terraform-on-Microsoft-Azure
