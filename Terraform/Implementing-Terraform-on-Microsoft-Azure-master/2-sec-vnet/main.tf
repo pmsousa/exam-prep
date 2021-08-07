@@ -41,7 +41,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 2.0"
+      version = "2.61.0"
     }
 
     azuread = {
@@ -54,7 +54,9 @@ terraform {
 
 
 provider "azurerm" {
-  
+  features {
+    
+  }
 }
 
 provider "azuread" {
@@ -74,10 +76,10 @@ resource "azurerm_resource_group" "rg" {
 ## NETWORKING ##
 
 module "vnet-sec" {
-  source              = "Azure/vnet/azurerm"
-  version             = "1.2.0"
+  source              = "Azure/network/azurerm"
+  version             = "3.5.0"
   resource_group_name = azurerm_resource_group.rg.name
-  vnet_name           =  azurerm_resource_group.rg.name
+  vnet_name           = azurerm_resource_group.rg.name
   address_space       = var.vnet_cidr_range
   subnet_prefixes     = var.sec_subnet_prefixes
   subnet_names        = var.sec_subnet_names
@@ -85,14 +87,14 @@ module "vnet-sec" {
   tags = {
     purpose = "training"
     description  = "Terraform exercises"
-
   }
 
-    depends_on = [azurerm_resource_group.rg]
+  depends_on = [azurerm_resource_group.rg]
 
 }
 
 ## AZURE AD SP ##
+
 
 resource "random_password" "vnet_peering" {
   length  = 16
@@ -117,8 +119,8 @@ resource "azurerm_role_definition" "vnet-peering" {
   name     = "allow-vnet-peering"
   scope    = data.azurerm_subscription.current.id
 
+#Microsoft Actions Reference: https://docs.microsoft.com/en-us/azure/role-based-access-control/resource-provider-operations
   permissions {
-    #Microsoft Actions Reference: https://docs.microsoft.com/en-us/azure/role-based-access-control/resource-provider-operations
     actions     = ["Microsoft.Network/virtualNetworks/virtualNetworkPeerings/write", "Microsoft.Network/virtualNetworks/peer/action", "Microsoft.Network/virtualNetworks/virtualNetworkPeerings/read", "Microsoft.Network/virtualNetworks/virtualNetworkPeerings/delete"]
     not_actions = []
   }
@@ -130,7 +132,7 @@ resource "azurerm_role_definition" "vnet-peering" {
 
 resource "azurerm_role_assignment" "vnet" {
   scope              = module.vnet-sec.vnet_id
-  role_definition_id = azurerm_role_definition.vnet-peering.id
+  role_definition_id = split("|",azurerm_role_definition.vnet-peering.id)[0]
   principal_id       = azuread_service_principal.vnet_peering.id
 }
 
@@ -173,6 +175,7 @@ output "service_principal_client_id" {
 
 output "service_principal_client_secret" {
   value = random_password.vnet_peering.result
+  sensitive = true
 }
 
 output "resource_group_name" {
